@@ -1,0 +1,8 @@
+FROM mariadb
+
+ADD init.sql /docker-entrypoint-initdb.d
+
+ENV MYSQL_DATABASE=pm_db
+ENV MYSQL_ROOT_PASSWORD=root
+
+EXPOSE 3306

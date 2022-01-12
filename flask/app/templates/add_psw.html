@@ -1,0 +1,21 @@
+<HTML>
+
+  <form method="POST">
+        <center>
+        <H2>Add new password</H2> <br>
+        <div class="msg" color=#FF0000 >{{ msg }}</div>
+        Website <input type = "text" name= "wbst" maxlength="50"/> <br>
+        Password <input type = "password" name = "psw" /> <br>
+        Master <input type = "password" name = "mpsw" /> <br>
+        <input type = "submit" name="submit">
+        <div style="margin-top:15px;" class="container">
+            <span><a href="/home">Back</a></span>
+        </div>
+        <p style="margin-top:30px;">
+          Sample safe password:
+          <div class="psw">{{ rand_psw }}</div>
+        </p>
+        </center>
+    </form>
+    
+  </HTML>

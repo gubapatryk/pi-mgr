@@ -1,0 +1,25 @@
+<HTML>
+    <form method="POST">
+        <center>
+        <H2>Saved Passwords</H2>
+        <div class="msg">{{ msg }}</div>
+        <input type = "password" name = "mpsw" /> <br>
+        <table style="margin-top:20px;">
+          <tr>
+           <th> Website </th>
+           <th> Password </th>
+          </tr>
+          {% for row in rows %}
+          <tr>
+              <td style="width:300px" bgcolor=#B8B8B8 >{{ row[0] }}</a></td>
+              <td style="width:300px" bgcolor=#E8E8E8>{{ row[1] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        <div style="margin-top:15px;" class="container">
+          <span><a href="/home">Back</a></span>
+        </div>
+        </center>
+    </form>
+    
+  </HTML>

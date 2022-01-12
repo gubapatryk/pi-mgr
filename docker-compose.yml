@@ -1,0 +1,40 @@
+version: "3.3"
+
+services:
+
+  flask:
+    build:
+      dockerfile: Dockerfile.flask
+      context: ./flask
+    working_dir: /app
+    volumes:
+      - ./flask:/app
+    container_name: flask
+    ports:
+      - 3031:3031
+    restart: always
+
+  mariadb:
+    build:
+      dockerfile: Dockerfile.mariadb
+      context: ./mariadb
+    volumes:
+     - data:/var/lib/mariadb
+    container_name: mariadb
+    ports:
+      - 3306:3306
+
+  nginx:
+    build:
+      dockerfile: Dockerfile.nginx
+      context: ./nginx
+    container_name: nginx
+    ports:
+      - 443:443
+    volumes: 
+     - ./nginx/certs:/etc/nginx/certs
+    restart: always
+
+volumes:
+  data:
+    
