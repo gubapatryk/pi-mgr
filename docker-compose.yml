@@ -6,6 +6,8 @@ services:
     build:
       dockerfile: Dockerfile.flask
       context: ./flask
+    depends_on:
+      - mariadb
     working_dir: /app
     volumes:
       - ./flask:/app
