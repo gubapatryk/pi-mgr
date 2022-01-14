@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.9"
 
 services:
 
@@ -20,17 +20,24 @@ services:
     build:
       dockerfile: Dockerfile.mariadb
       context: ./mariadb
-    volumes:
-     - data:/var/lib/mariadb
     container_name: mariadb
     ports:
       - 3306:3306
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_USER=admin
+      - MARIADB_PASSWORD=root
+      - TZ=UTC
+    volumes:
+      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   nginx:
     build:
       dockerfile: Dockerfile.nginx
       context: ./nginx
     container_name: nginx
+    depends_on:
+      - flask
     ports:
       - 443:443
     volumes: 

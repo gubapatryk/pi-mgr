@@ -2,7 +2,7 @@ DROP DATABASE IF EXISTS pm_db;
 CREATE DATABASE pm_db;
 use pm_db;
 
-SET GLOBAL explicit_defaults_for_timestamp = 1;
+-- SET GLOBAL explicit_defaults_for_timestamp = 1;
 
 CREATE TABLE IF NOT EXISTS users (
   ID int(10) NOT NULL AUTO_INCREMENT,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS tokens (
   created DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY  (s_id),
   FOREIGN KEY (u_id) REFERENCES users(ID)
-) 
+);
 
 
   
