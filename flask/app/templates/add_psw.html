@@ -1,11 +1,42 @@
 <HTML>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+    body {
+      font-family: 'Lato', sans-serif;
+      background-color:#c31c4a;
+      color:#fafafa;
+    }
+    input[type=submit] {
+      background-color: #fafafa;
+      border-radius: 4px;
+      border: none;
+      color: #c31c4a;
+      padding: 8px 16px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      -webkit-transition-duration: 0.4s;
+      transition-duration: 0.4s;
+    }
 
+    input[type=submit] {
+      box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.1), 0 6px 20px 0 rgba(0,0,0,0.19);
+    }
+
+    input[type=submit]:hover {
+      background-color: #dbdbdb;
+    }
+    </style> 
   <form method="POST">
         <center>
+        <H1>Raspberry Pi Unofficial Password Manager</H1> <br>
         <H2>Add new password</H2> <br>
         <div class="msg" color=#FF0000 >{{ msg }}</div>
-        Website <input type = "text" name= "wbst" maxlength="50"/> <br>
-        Password <input type = "password" name = "psw" /> <br>
+        Website <input type = "website-name" name= "wbst" maxlength="50"/> <br>
+        Password <input type = "new_password" name = "psw" value="{{ rand_psw }}"/><br>
         Master <input type = "password" name = "mpsw" /> <br>
         <input type = "submit" name="submit">
         <div style="margin-top:15px;" class="container">

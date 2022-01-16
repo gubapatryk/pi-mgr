@@ -1,9 +1,44 @@
 <HTML>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+    body {
+      font-family: 'Lato', sans-serif;
+      background-color:#c31c4a;
+      color:#fafafa;
+    }
+    input[type=submit] {
+      background-color: #fafafa;
+      border-radius: 4px;
+      border: none;
+      color: #c31c4a;
+      padding: 8px 16px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      -webkit-transition-duration: 0.4s;
+      transition-duration: 0.4s;
+    }
+
+    input[type=submit] {
+      box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.1), 0 6px 20px 0 rgba(0,0,0,0.19);
+    }
+
+    input[type=submit]:hover {
+      background-color: #dbdbdb;
+    }
+    </style> 
+  <script>
+    var ctr = 0;
+    var passwords= [];
+  </script>
     <form method="POST">
         <center>
         <H2>Saved Passwords</H2>
-        <div class="msg">{{ msg }}</div>
         <input type = "password" name = "mpsw" /> <br>
+        <div class="msg">{{ msg }}</div>
         <table style="margin-top:20px;">
           <tr>
            <th> Website </th>
@@ -11,8 +46,11 @@
           </tr>
           {% for row in rows %}
           <tr>
-              <td style="width:300px" bgcolor=#B8B8B8 >{{ row[0] }}</a></td>
-              <td style="width:300px" bgcolor=#E8E8E8>{{ row[1] }}</td>
+              <script>
+                passwords.push('{{ row[1] }}');
+              </script>
+              <td style="width:300px; color:#000000;" bgcolor=#fafafa >{{ row[0] }}</a></td>
+              <td onclick='(function(){ navigator.clipboard.writeText(passwords[{{ loop.index0 }}]); })();' style="width:300px; color:#fafafa; background-color:#fafafa;">{{ row[1] }}</td>
           </tr>
           {% endfor %}
         </table>
