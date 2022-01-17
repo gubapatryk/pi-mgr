@@ -2,8 +2,6 @@ DROP DATABASE IF EXISTS pm_db;
 CREATE DATABASE pm_db;
 use pm_db;
 
--- SET GLOBAL explicit_defaults_for_timestamp = 1;
-
 CREATE TABLE IF NOT EXISTS users (
   ID int(10) NOT NULL AUTO_INCREMENT,
   username varchar(30) NOT NULL,
@@ -24,7 +22,7 @@ CREATE TABLE IF NOT EXISTS passwords (
   u_id   int(10) NOT NULL,
   website   varchar(50) NOT NULL ,
   passwd VARBINARY(256) NOT NULL,
-  PRIMARY KEY (ID), 
+  PRIMARY KEY (ID),
   FOREIGN KEY (u_id) REFERENCES users(ID)
 );
 
@@ -35,6 +33,3 @@ CREATE TABLE IF NOT EXISTS tokens (
   PRIMARY KEY  (s_id),
   FOREIGN KEY (u_id) REFERENCES users(ID)
 );
-
-
-  

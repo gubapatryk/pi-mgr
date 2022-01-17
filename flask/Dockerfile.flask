@@ -1,13 +1,12 @@
 FROM python:3.9-slim-buster
 
 RUN apt-get update \
-    && apt-get -yy install libmariadb-dev
+    && apt-get -yy install libmariadb-dev \
+    && apt-get -y install gcc
 
 EXPOSE 3031
 COPY . /app
 WORKDIR /app
-RUN apt-get update && \
-    apt-get -y install gcc
 RUN pip install -r requirements.txt
 COPY wsgi.ini /etc/uwsgi/
 CMD ["uwsgi", "--uid", "33", "wsgi.ini"]

@@ -5,7 +5,6 @@ import random
 import string
 from app import db, app, validation as val
 
-### dekorator do określania podstron, na których trzeba być zalagowanym
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -25,12 +24,12 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
    msg = ''
-   db.del_terminated_tokens() 
+   db.del_terminated_tokens()
    if request.method == 'POST' and 'uname' in request.form and 'psw' in request.form:
       details = request.form
       login = details['uname']
       password = details['psw']
-      
+
       if db.validate_user(login, password):
 
          if db.is_blocked(login):
@@ -54,7 +53,7 @@ def login():
          if db.is_blocked(login):
             date = db.get_unblock_date(login)
             msg = "User " + login + " is blocked until " + str(date)
-            
+
          else:
             db.update_login_attempts(login)
             attempts = db.get_failed_login_attempts(login)
@@ -62,9 +61,9 @@ def login():
 
             if att_left == 5:
                att_left = 0
-               
+
             msg = 'Incorrect password! You have ' + str(att_left) + ' attempts left!'
-               
+
       else:
          msg = "User " + login + " does not exist!"
 

@@ -1,5 +1,5 @@
 import mariadb
-from app import encryption as enc
+from app import encryption as en
 
 config = {
       'user': 'root',
@@ -11,10 +11,8 @@ config = {
 
 connection = mariadb.connect(**config)
 
-### tabela USERS
-
 def add_new_user(login, password):
-    hashed, salt = enc.encrypt(password)
+    hashed, salt = en.encrypt(password)
     cursor = connection.cursor(buffered=True)
     cursor.execute("INSERT INTO users(username, passwd, salt) VALUES (%s, %s, %s)", (login, hashed, salt))
     connection.commit()
@@ -32,7 +30,7 @@ def user_exists(login):
 def validate_user(login, password):
     if user_exists(login):
         salt = get_user_salt(login)
-        hashed_psw = enc.encrypt_with_salt(password, salt)
+        hashed_psw = en.encrypt_with_salt(password, salt)
         cursor = connection.cursor(buffered=True)
         cursor.execute('SELECT * FROM users WHERE username = %s AND passwd = %s', (login, hashed_psw))
         data = cursor.fetchone()
@@ -50,15 +48,11 @@ def get_id_from_username(username):
     return user_id
 
 def get_user_salt(username):
-    #only if user exists
     cursor = connection.cursor(buffered=True)
     cursor.execute('SELECT salt FROM users WHERE username = %s', (username, ))
     salt = cursor.fetchone()[0]
     cursor.close()
     return salt
-
-
-### tabela PASSWORDS
 
 def get_passwords(username, master_password):
     cursor = connection.cursor(buffered=True)
@@ -90,9 +84,6 @@ def remove_old_password(username, website):
     connection.commit()
     cursor.close()
 
-
-### tabela TOKENS
-
 def add_token(token, username):
     del_token(token)
     cursor = connection.cursor(buffered=True)
@@ -119,9 +110,6 @@ def del_terminated_tokens():
     cursor.execute("DELETE FROM tokens WHERE created < ADDDATE(NOW(), INTERVAL -15 MINUTE)")
     connection.commit()
     cursor.close()
-
-
-#### tabela FAILED_LOG_ATTEMPTS 
 
 def update_login_attempts(username):
     cursor = connection.cursor(buffered=True)
