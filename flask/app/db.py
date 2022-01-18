@@ -11,8 +11,6 @@ config = {
 
 connection = mariadb.connect(**config)
 
-### tabela USERS
-
 def add_new_user(login, password):
     hashed, salt = enc.encrypt(password)
     cursor = connection.cursor(buffered=True)
@@ -50,15 +48,12 @@ def get_id_from_username(username):
     return user_id
 
 def get_user_salt(username):
-    #only if user exists
     cursor = connection.cursor(buffered=True)
     cursor.execute('SELECT salt FROM users WHERE username = %s', (username, ))
     salt = cursor.fetchone()[0]
     cursor.close()
     return salt
 
-
-### tabela PASSWORDS
 
 def get_passwords(username, master_password):
     cursor = connection.cursor(buffered=True)
@@ -90,9 +85,6 @@ def remove_old_password(username, website):
     connection.commit()
     cursor.close()
 
-
-### tabela TOKENS
-
 def add_token(token, username):
     del_token(token)
     cursor = connection.cursor(buffered=True)
@@ -119,9 +111,6 @@ def del_terminated_tokens():
     cursor.execute("DELETE FROM tokens WHERE created < ADDDATE(NOW(), INTERVAL -15 MINUTE)")
     connection.commit()
     cursor.close()
-
-
-#### tabela FAILED_LOG_ATTEMPTS 
 
 def update_login_attempts(username):
     cursor = connection.cursor(buffered=True)
