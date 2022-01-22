@@ -30,25 +30,24 @@
       background-color: #dbdbdb;
     }
     </style> 
-  <center>
-    <H1>Raspberry Pi Unofficial Password Manager</H1> <br>
-    <h2>Home Page</h2>
-    <p>Welcome {{ username }}!</p>
-    <form action="/home/psw_list" method="POST">
-      <input type="submit" value="Show saved passwords" />
+    <form method="POST">
+        <center>
+        <H2>Login attempts</H2>
+        <div class="msg">{{ msg }}</div>
+        <table style="margin-top:20px;">
+          <tr>
+           <th> Website </th>
+          </tr>
+          {% for row in rows %}
+          <tr>
+              <td style="width:300px" bgcolor=#B8B8B8 >{{ row }}</a></td>
+          </tr>
+          {% endfor %}
+        </table>
+        <div style="margin-top:15px;" class="container">
+          <span><a href="/home">Back</a></span>
+        </div>
+        </center>
     </form>
-    <form action="/home/attempts" method="POST">
-      <input type="submit" value="Show login attempts" />
-    </form>
-    <form action="/home/add_psw" method="POST">
-      <input type="submit" value="Add new password" />
-    </form>
-    <form action="/home/del_psw" method="POST">
-      <input type="submit" value="Delete saved password" />
-    </form>
-    <form action="/logout">
-      <input type="submit" value="Log out" />
-    </form>
-  </center>
-
-</HTML>
+    
+  </HTML>

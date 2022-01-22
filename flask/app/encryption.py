@@ -1,6 +1,6 @@
 import bcrypt
 
-pepper = '2hf27hf283bf8'
+pepper = b'2hf27hf283bf8'
 
 def encrypt(password):
     salt = bcrypt.gensalt()

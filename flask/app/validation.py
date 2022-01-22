@@ -5,6 +5,15 @@ import re
 def get_random_string(len):
     return ''.join((random.choice(string.ascii_letters + string.digits) for i in range(len)))
 
+def is_input_safe(input):
+    if re.search(r'/[\t\r\n]|(--[^\r\n]*)|(\/\*[\w\W]*?(?=\*)\*\/)/gi',input) is None:
+        matches = re.findall(r'[^A-Za-z0-9!@#$%^&+=.:/]*',input)
+        for m in matches:
+            if m != '':
+                return False
+        return True
+    return False
+
 def validate_password(password):
     msg = ''
     if len(password) < 8:

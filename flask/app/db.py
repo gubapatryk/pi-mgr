@@ -93,6 +93,22 @@ def add_token(token, username):
     connection.commit()
     cursor.close()
 
+def add_attempt(username, info):
+    cursor = connection.cursor(buffered=True)
+    user_id = get_id_from_username(username)
+    cursor.execute("INSERT INTO login_attempts(u_id, l_attempt) VALUES (%s, %s)", (user_id, info))
+    connection.commit()
+    cursor.close()
+
+
+def get_user_login_attempts(username):
+    cursor = connection.cursor(buffered=True)
+    user_id = get_id_from_username(username)
+    cursor.execute('SELECT l_attempt FROM login_attempts WHERE u_id = %s', (user_id, ))
+    rows = cursor.fetchall()
+    cursor.close()
+    return rows
+
 def get_user_from_token(token):
     cursor = connection.cursor(buffered=True)
     cursor.execute('SELECT u.username FROM tokens s JOIN users u ON s.u_id = u.ID WHERE s.s_id = %s', (token, ))

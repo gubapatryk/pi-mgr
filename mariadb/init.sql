@@ -33,3 +33,24 @@ CREATE TABLE IF NOT EXISTS tokens (
   PRIMARY KEY  (s_id),
   FOREIGN KEY (u_id) REFERENCES users(ID)
 );
+
+
+CREATE TABLE IF NOT EXISTS shared_passwords (
+  ID int(10) NOT NULL AUTO_INCREMENT,
+  p_id int(10) NOT NULL,
+  o_id int(10) NOT NULL,
+  r_id int(10) NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT true,
+  PRIMARY KEY  (ID),
+  FOREIGN KEY (o_id) REFERENCES users(ID),
+  FOREIGN KEY (r_id) REFERENCES users(ID),
+  FOREIGN KEY (p_id) REFERENCES passwords(ID)
+);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  ID int(10) NOT NULL AUTO_INCREMENT,
+  u_id int(10) NOT NULL,
+  l_attempt varchar(256) NOT NULL,
+  PRIMARY KEY  (ID),
+  FOREIGN KEY (u_id) REFERENCES users(ID)
+);

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, json, redirect, url_for, session, make_response
 import mariadb
 from functools import wraps
+from datetime import datetime
 import random
 import string
 from app import db, app, validation as val
@@ -21,6 +22,20 @@ def index():
       return redirect(url_for('home'))
    return redirect(url_for('login'))
 
+def add_attempt(login, request, successful):        
+   now = datetime.now()
+
+   current_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+
+   if successful:
+      login_info = "SUCCESSFUL :" 
+   else:
+      login_info = "FAILED :" 
+      
+   login_info = login_info +  current_time + ", " + request.headers.get('Host') + ", " + request.headers.get('User-Agent')[:75] + ", " + request.headers.get('Accept-Language')[:30]
+
+   db.add_attempt(login,login_info)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -28,45 +43,55 @@ def login():
    db.del_terminated_tokens() 
    if request.method == 'POST' and 'uname' in request.form and 'psw' in request.form:
       details = request.form
-      login = details['uname']
-      password = details['psw']
-      
-      if db.validate_user(login, password):
+      if val.is_input_safe(details['uname']) and val.is_input_safe(details['psw']):
+         login = details['uname']
+         password = details['psw']
+         
+         print(f'Czy wejscie bylo bezpieczne? : {val.is_input_safe(login)}')
 
-         if db.is_blocked(login):
-            date = db.get_unblock_date(login)
-            msg = "User " + login + " is blocked until " + str(date)
-
-         else:
-            db.del_attempts(login)
-            token = val.get_random_string(24)
-            db.add_token(token, login)
-            res = make_response("Logged in", 302)
-            res.set_cookie("Session ID", token, max_age=300, secure=True, httponly=True)
-            res.headers['location'] = 'home'
-            return res
-
-      elif not login or not password:
-         msg = 'Fill out the form!'
-
-      elif db.user_exists(login):
-
-         if db.is_blocked(login):
-            date = db.get_unblock_date(login)
-            msg = "User " + login + " is blocked until " + str(date)
+         if db.validate_user(login, password):
             
-         else:
-            db.update_login_attempts(login)
-            attempts = db.get_failed_login_attempts(login)
-            att_left = 5 - attempts % 5
+            add_attempt(login, request, True)
 
-            if att_left == 5:
-               att_left = 0
+            if db.is_blocked(login):
+               date = db.get_unblock_date(login)
+               msg = "User " + login + " is blocked until " + str(date)
+
+            else:
+               db.del_attempts(login)
+               token = val.get_random_string(24)
+               db.add_token(token, login)
+               res = make_response("Logged in", 302)
+               res.set_cookie("Session ID", token, max_age=300, secure=True, httponly=True)
+               res.headers['location'] = 'home'
+               print(db.get_user_login_attempts(login))
+               return res
+
+         elif not login or not password:
+            msg = 'Fill out the form!'
+
+         elif db.user_exists(login):
+
+            add_attempt(login, request, False)
+
+            if db.is_blocked(login):
+               date = db.get_unblock_date(login)
+               msg = "User " + login + " is blocked until " + str(date)
                
-            msg = 'Incorrect password! You have ' + str(att_left) + ' attempts left!'
-               
+            else:
+               db.update_login_attempts(login)
+               attempts = db.get_failed_login_attempts(login)
+               att_left = 5 - attempts % 5
+
+               if att_left == 5:
+                  att_left = 0
+                  
+               msg = 'Incorrect password! You have ' + str(att_left) + ' attempts left!'
+                  
+         else:
+            msg = "User " + login + " does not exist!"
       else:
-         msg = "User " + login + " does not exist!"
+         msg = "Incorrect input!"
 
    return render_template("login.html", msg = msg)
 
@@ -109,6 +134,15 @@ def psw_list():
    msg = "Type in your master password to show saved passwords:"
    return render_template('psw_list.html', msg=msg)
 
+@app.route('/home/attempts', methods=['GET', 'POST'])
+@login_required
+def attempts_list():
+
+   token = request.cookies.get('Session ID')
+   username = db.get_user_from_token(token)
+   rows = db.get_user_login_attempts(username)
+   msg = "Showing list of saved " + str(len(rows)) + " login attempt(s)"
+   return render_template('attempts.html',rows=rows, msg=msg)
 
 @app.route('/home/add_psw', methods=['GET', 'POST'])
 @login_required
