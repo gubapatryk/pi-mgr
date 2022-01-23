@@ -37,15 +37,15 @@ CREATE TABLE IF NOT EXISTS shared_passwords (
   password_id int(10) NOT NULL,
   owner_id int(10) NOT NULL,
   receiver_id int(10) NOT NULL,
-  active BOOLEAN NOT NULL DEFAULT true,
-  PRIMARY KEY  (ID),
+  active BOOLEAN NOT NULL DEFAULT false,
+  PRIMARY KEY (ID)
 );
 
 CREATE TABLE IF NOT EXISTS login_attempts (
   ID int(10) NOT NULL AUTO_INCREMENT,
   u_id int(10) NOT NULL,
   l_attempt varchar(256) NOT NULL,
-  PRIMARY KEY  (ID)
+  PRIMARY KEY (ID)
 );
 
 CREATE TABLE IF NOT EXISTS recovery_tokens (

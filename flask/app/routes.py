@@ -20,7 +20,6 @@ def get_user_from_token_val(token):
    else:
       return None
 
-
 @app.route("/")
 def index():
    if request.cookies.get('Session ID') != None:
@@ -114,6 +113,7 @@ def logout():
 def home():
    token = request.cookies.get('Session ID')
    uname = get_user_from_token_val(token)
+   db.refresh_shared_passwords(uname)
    return render_template('home.html',  username = uname)
 
 
@@ -131,7 +131,8 @@ def psw_list():
          if not db.validate_user(username, master_password):
             msg = "Wrong master password!"
             return render_template('psw_list.html', msg=msg)
-
+         
+         db.refresh_shared_passwords(username)
          rows = db.get_passwords(username, master_password)
          msg = "Your have " + str(len(rows)) + " saved passwords"
          return render_template('psw_list.html',rows=rows, msg=msg)
@@ -321,17 +322,23 @@ def share():
 
    msg = ''
    try:
-      if request.method == 'POST' and 'uname' in request.form and 'wbst' in request.form:
+      if request.method == 'POST' and 'uname' in request.form and 'wbst' in request.form and 'mpsw' in request.form:
          details = request.form
-         if val.is_username_format(details['uname']) and val.is_input_safe(details['wbst']):
-            shared_user = details['uname']
-            token = details['wbst']
+         if val.is_username_format(details['uname']) and val.is_password_format(details['mpsw']) and val.is_input_safe(details['wbst']):
+            target_user = details['uname']
+            website = details['wbst']
+            master_password = details['mpsw']
+            token = request.cookies.get('Session ID')
+            username = get_user_from_token_val(token)
 
-            if db.user_exists(login) and db.recovery_token_valid(token,login):
-               db.reset_password(login, password)
-               db.del_recovery_token(token)
+            if db.user_exists(target_user) and db.validate_user(username, master_password):
+               
+               if db.password_exists(website):
+                  db.add_shared_password(username, target_user, website, master_password)
+               else:
+                  msg = 'Password does not exists in db'
             else:
-               msg = 'Invalid token or user doesnt exists'
+               msg = 'Invalid password or user doesnt exists'
          else:
             msg = 'Invalid forms input'
 

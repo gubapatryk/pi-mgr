@@ -9,7 +9,18 @@ config = {
       'database': 'pm_db',
       }
 
+local_admin_password = "kj23#FRjmfDFsjl"
+
 connection = mariadb.connect(**config)
+
+def user_exists(login):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('SELECT * FROM users WHERE username = %s', (login, ))
+    data = cursor.fetchone()
+    cursor.close()
+    if data:
+        return True
+    return False
 
 def add_new_user(login, email, password):
     hashed, salt = enc.encrypt(password)
@@ -18,6 +29,8 @@ def add_new_user(login, email, password):
     connection.commit()
     cursor.close()
 
+if not user_exists('admin'):
+    add_new_user('admin','admin@localhost',local_admin_password)
 
 def reset_password(login, password):
     hashed, salt = enc.encrypt(password)
@@ -27,7 +40,6 @@ def reset_password(login, password):
     remove_user_passwords(u_id)
     connection.commit()
     cursor.close()
-
 
 def reencrypt_passwords(username, old_password, new_password):
     cursor = connection.cursor(buffered=True)
@@ -47,15 +59,6 @@ def remove_user_passwords(u_id):
     cursor.execute('DELETE FROM passwords WHERE u_id = %s', (u_id, ))
     connection.commit()
     cursor.close()
-
-def user_exists(login):
-    cursor = connection.cursor(buffered=True)
-    cursor.execute('SELECT * FROM users WHERE username = %s', (login, ))
-    data = cursor.fetchone()
-    cursor.close()
-    if data:
-        return True
-    return False
 
 def validate_user(login, password):
     if user_exists(login):
@@ -77,7 +80,14 @@ def get_id_from_username(username):
     cursor.close()
     return user_id
 
-    
+
+def get_id_from_website(website):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('select ID from passwords where website = %s', (website,))
+    pass_id = cursor.fetchone()[0]
+    cursor.close()
+    return pass_id
+
 def get_email_from_username(username):
     cursor = connection.cursor(buffered=True)
     cursor.execute('select u.email from users u where u.username = %s', (username,))
@@ -123,6 +133,40 @@ def remove_old_password(username, website):
     connection.commit()
     cursor.close()
 
+def add_shared_password(username, receiver_name, website, master_password):
+    cursor = connection.cursor(buffered=True)
+    user_id = get_id_from_username(username)
+    cursor.execute('SELECT website, cast(AES_DECRYPT(passwd, SHA2(%s,512)) as CHAR) FROM passwords WHERE website = %s', (master_password, website,))
+    data = cursor.fetchone()
+    website = data[0]
+    password_decrypted = data[1]
+    admin_id = get_id_from_username('admin')
+    receiver_id = get_id_from_username(receiver_name)
+    pass_id = get_id_from_website(website)
+    cursor.execute("INSERT INTO passwords(u_id, website, passwd) VALUES (%s, %s, AES_ENCRYPT(%s, SHA2(%s,512)))", (admin_id, website, password_decrypted, local_admin_password))
+    cursor.execute("INSERT INTO shared_passwords(password_id, owner_id, receiver_id, active) VALUES (%s, %s, %s, false)", (pass_id, user_id, receiver_id))
+    connection.commit()
+    cursor.close()
+
+def refresh_shared_passwords(username):
+    cursor = connection.cursor(buffered=True)
+    user_id = get_id_from_username(username)
+    cursor.execute("SELECT password_id FROM shared_passwords WHERE (receiver_id = %s AND active is false)", (user_id, ))
+    rows = cursor.fetchall()
+    print(rows)
+    for row in rows:
+        print(row)
+        cursor.execute("SELECT website, cast(AES_DECRYPT(passwd, SHA2(%s,512)) as CHAR), passwd FROM passwords WHERE ID=%s", (local_admin_password, row[0]))
+        data = cursor.fetchone()
+        print(data)
+        cursor.execute("INSERT INTO passwords (u_id, website, passwd) VALUES (%s, %s, AES_ENCRYPT(%s, SHA2(%s,512)))", (user_id, data[0], data[1], local_admin_password))
+        cursor.execute("DELETE FROM passwords WHERE ID=%s", (row[0], ))
+        cursor.execute("UPDATE shared_passwords SET active=true WHERE password_id = %s", (row[0], ))
+        print('fin')
+    connection.commit()
+    cursor.close()
+
+    
 def add_token(token, username):
     del_token(token)
     cursor = connection.cursor(buffered=True)
@@ -134,14 +178,14 @@ def add_token(token, username):
 def add_attempt(username, info):
     cursor = connection.cursor(buffered=True)
     user_id = get_id_from_username(username)
-    cursor.execute("INSERT INTO login_attempts(u_id, l_attempt) VALUES (%s, %s)", (user_id, info))
+    cursor.execute("INSERT INTO login_attempts (u_id, l_attempt) VALUES (%s, %s)", (user_id, info))
     connection.commit()
     cursor.close()
 
 def add_recovery_token(username,token):
     cursor = connection.cursor(buffered=True)
     user_id = get_id_from_username(username)
-    cursor.execute("INSERT INTO recovery_tokens(token, u_id) VALUES (%s, %s)", (token, user_id))
+    cursor.execute("INSERT INTO recovery_tokens (token, u_id) VALUES (%s, %s)", (token, user_id))
     connection.commit()
     cursor.close()
 
