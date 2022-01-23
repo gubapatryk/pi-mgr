@@ -11,10 +11,28 @@ config = {
 
 connection = mariadb.connect(**config)
 
-def add_new_user(login, password):
+def add_new_user(login, email, password):
     hashed, salt = enc.encrypt(password)
     cursor = connection.cursor(buffered=True)
-    cursor.execute("INSERT INTO users(username, passwd, salt) VALUES (%s, %s, %s)", (login, hashed, salt))
+    cursor.execute("INSERT INTO users(username, email, passwd, salt) VALUES (%s, %s, %s, %s)", (login, email, hashed, salt))
+    connection.commit()
+    cursor.close()
+
+
+def reset_password(login, password):
+    hashed, salt = enc.encrypt(password)
+    u_id = get_id_from_username(login)
+    cursor = connection.cursor(buffered=True)
+    print("reset_password")
+    cursor.execute("UPDATE users SET passwd=%s, salt=%s WHERE ID = %s", (hashed, salt, u_id))
+    print("reset_password2")
+    remove_user_passwords(u_id)
+    connection.commit()
+    cursor.close()
+
+def remove_user_passwords(u_id):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('DELETE FROM passwords WHERE u_id = %s', (u_id, ))
     connection.commit()
     cursor.close()
 
@@ -47,6 +65,14 @@ def get_id_from_username(username):
     cursor.close()
     return user_id
 
+    
+def get_email_from_username(username):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('select u.email from users u where u.username = %s', (username,))
+    user_email = cursor.fetchone()[0]
+    cursor.close()
+    return user_email
+
 def get_user_salt(username):
     cursor = connection.cursor(buffered=True)
     cursor.execute('SELECT salt FROM users WHERE username = %s', (username, ))
@@ -56,6 +82,13 @@ def get_user_salt(username):
 
 
 def get_passwords(username, master_password):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('select p.website, cast(AES_DECRYPT(p.passwd, SHA2(%s,512)) as CHAR) from users u join passwords p on u.ID = p.u_id where u.username = %s', (master_password, username))
+    rows = cursor.fetchall()
+    cursor.close()
+    return rows
+
+def recrypt_passwords(username, master_password):
     cursor = connection.cursor(buffered=True)
     cursor.execute('select p.website, cast(AES_DECRYPT(p.passwd, SHA2(%s,512)) as CHAR) from users u join passwords p on u.ID = p.u_id where u.username = %s', (master_password, username))
     rows = cursor.fetchall()
@@ -100,6 +133,22 @@ def add_attempt(username, info):
     connection.commit()
     cursor.close()
 
+def add_recovery_token(username,token):
+    cursor = connection.cursor(buffered=True)
+    user_id = get_id_from_username(username)
+    cursor.execute("INSERT INTO recovery_tokens(token, u_id) VALUES (%s, %s)", (token, user_id))
+    connection.commit()
+    cursor.close()
+
+def recovery_token_valid(token,username):
+    user_id = get_id_from_username(username)
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('SELECT * FROM recovery_tokens WHERE token = %s AND u_id = %s', (token, user_id))
+    data = cursor.fetchone()
+    cursor.close()
+    if data:
+        return True
+    return False
 
 def get_user_login_attempts(username):
     cursor = connection.cursor(buffered=True)
@@ -125,6 +174,21 @@ def del_token(token):
 def del_terminated_tokens():
     cursor = connection.cursor(buffered=True)
     cursor.execute("DELETE FROM tokens WHERE created < ADDDATE(NOW(), INTERVAL -15 MINUTE)")
+    connection.commit()
+    cursor.close()
+
+
+def del_terminated_recovery_tokens():
+    cursor = connection.cursor(buffered=True)
+    cursor.execute("DELETE FROM recovery_tokens WHERE created < ADDDATE(NOW(), INTERVAL -15 MINUTE)")
+    connection.commit()
+    cursor.close()
+
+
+def del_recovery_token(token):
+    cursor = connection.cursor(buffered=True)
+    print("recovery_token")
+    cursor.execute("DELETE FROM recovery_tokens WHERE token=%s", (token, ))
     connection.commit()
     cursor.close()
 

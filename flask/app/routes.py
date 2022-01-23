@@ -4,7 +4,7 @@ from functools import wraps
 from datetime import datetime
 import random
 import string
-from app import db, app, validation as val
+from app import db, app, validation as val, mail
 
 ### dekorator do określania podstron, na których trzeba być zalagowanym
 def login_required(f):
@@ -47,7 +47,6 @@ def login():
          login = details['uname']
          password = details['psw']
          
-         print(f'Czy wejscie bylo bezpieczne? : {val.is_input_safe(login)}')
 
          if db.validate_user(login, password):
             
@@ -210,20 +209,55 @@ def register():
 
    msg = ''
    try:
-      if request.method == 'POST' and 'uname' in request.form and 'psw' in request.form:
+      if request.method == 'POST' and 'uname' in request.form and 'psw' in request.form and 'email' in request.form:
+         details = request.form
+         if val.is_username_format(details['uname']) and val.is_password_format(details['psw']) and val.is_email_format(details['email']):
+            login = details['uname']
+            password = details['psw']
+            email = details['email']
+
+            if db.user_exists(login):
+               msg = 'Username exists!'
+
+            elif login and password:
+               msg = val.validate_password(password)
+            
+               if msg == '':
+                  db.add_new_user(login, email, password)
+                  msg = 'Successfully registered new account!'
+
+            else:
+               msg = 'Fill out the form!'
+         else:
+            msg = 'Invalid forms input'
+
+      elif request.method == 'POST':
+         msg = 'Fill out the form!'
+
+   except mariadb.Error as err:
+      return("Something went wrong: {}".format(err))
+   
+   return render_template('register.html', msg=msg)
+
+@app.route('/send_email', methods=['GET', 'POST'])
+def send_recovery_email():
+
+   msg = ''
+   try:
+      if request.method == 'POST' and 'uname' in request.form:
          details = request.form
          login = details['uname']
-         password = details['psw']
 
          if db.user_exists(login):
-            msg = 'Username exists!'
+            token = val.get_random_string(100)
+            db.add_recovery_token(login,token)
+            user_email = db.get_email_from_username(login)
+            print("bbb" + user_email +"bbb")
+            mail.send_mail(user_email,token)
+            msg = 'Sent recovery email!'
 
-         elif login and password:
-            msg = val.validate_password(password)
-         
-            if msg == '':
-               db.add_new_user(login, password)
-               msg = 'Successfully registered new account!'
+         elif login:
+            msg = 'Username does not exists!'
 
          else:
             msg = 'Fill out the form!'
@@ -234,4 +268,32 @@ def register():
    except mariadb.Error as err:
       return("Something went wrong: {}".format(err))
    
-   return render_template('register.html', msg=msg)
+   return render_template('send_email.html', msg=msg)
+
+@app.route('/recovery', methods=['GET', 'POST'])
+def recovery():
+
+   msg = ''
+   try:
+      if request.method == 'POST' and 'uname' in request.form and 'token' in request.form and 'psw' in request.form:
+         details = request.form
+         if val.is_username_format(details['uname']) and val.is_password_format(details['psw']) and val.is_input_safe(details['token']):
+            login = details['uname']
+            password = details['psw']
+            token = details['token']
+
+            if db.user_exists(login) and db.recovery_token_valid(token,login):
+               db.reset_password(login, password)
+               db.del_recovery_token(token)
+            else:
+               msg = 'Invalid token or user doesnt exists'
+         else:
+            msg = 'Invalid forms input'
+
+      elif request.method == 'POST':
+         msg = 'Fill out the form!'
+
+   except mariadb.Error as err:
+      return("Something went wrong: {}".format(err))
+   
+   return render_template('recovery.html', msg=msg)
