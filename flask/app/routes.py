@@ -119,16 +119,20 @@ def psw_list():
 
    if request.method == 'POST' and 'mpsw' in request.form:
       master_password = request.form['mpsw']
-      token = request.cookies.get('Session ID')
-      username = db.get_user_from_token(token)
+      if val.is_password_format(details['mpsw'])
+         token = request.cookies.get('Session ID')
+         username = db.get_user_from_token(token)
 
-      if not db.validate_user(username, master_password):
-         msg = "Wrong master password!"
-         return render_template('psw_list.html', msg=msg)
+         if not db.validate_user(username, master_password):
+            msg = "Wrong master password!"
+            return render_template('psw_list.html', msg=msg)
 
-      rows = db.get_passwords(username, master_password)
-      msg = "Your have " + str(len(rows)) + " saved passwords"
-      return render_template('psw_list.html',rows=rows, msg=msg)
+         rows = db.get_passwords(username, master_password)
+         msg = "Your have " + str(len(rows)) + " saved passwords"
+         return render_template('psw_list.html',rows=rows, msg=msg)
+      
+      else:
+         msg = 'Invalid forms input'
 
    msg = "Type in your master password to show saved passwords:"
    return render_template('psw_list.html', msg=msg)
@@ -150,38 +154,42 @@ def add_psw():
    replaced_flag = False
    rand_psw = val.get_random_string(16)
    
-   if request.method == 'POST' and 'wbst' in request.form and 'psw' in request.form:
+   if request.method == 'POST' and 'wbst' in request.form and 'psw' in request.form and 'mpsw' in request.form:
       details = request.form
-      website = details['wbst']
-      password = details['psw']
-      master_password = details['mpsw']
+      if val.is_password_format(details['psw']) and val.is_password_format(details['mpsw']) and val.is_input_safe(details['wbst']):
+         website = details['wbst']
+         password = details['psw']
+         master_password = details['mpsw']
 
-      if login and password and master_password:
+         if login and password and master_password:
 
-         token = request.cookies.get('Session ID')
-         username = db.get_user_from_token(token)
+            token = request.cookies.get('Session ID')
+            username = db.get_user_from_token(token)
 
-         if not db.validate_user(username, master_password):
-            return render_template('add_psw.html', msg="Wrong master password!", rand_psw=rand_psw)
+            if not db.validate_user(username, master_password):
+               return render_template('add_psw.html', msg="Wrong master password!", rand_psw=rand_psw)
 
-         msg = val.validate_password(password)
-         
-         if msg != '':
-            return render_template('add_psw.html', msg=msg, rand_psw=rand_psw)
+            msg = val.validate_password(password)
+            
+            if msg != '':
+               return render_template('add_psw.html', msg=msg, rand_psw=rand_psw)
 
-         if db.password_exists(website):
-            db.remove_old_password(username, website)
-            replaced_flag = True
-            msg = "Password for " + website + " has been updated!"
+            if db.password_exists(website):
+               db.remove_old_password(username, website)
+               replaced_flag = True
+               msg = "Password for " + website + " has been updated!"
 
-         db.add_password(username, website, password, master_password)
-         
-         if not replaced_flag:
-            msg = 'New password has been added!'
+            db.add_password(username, website, password, master_password)
+            
+            if not replaced_flag:
+               msg = 'New password has been added!'
 
-      else:
-         msg = 'Fill out the form!'
+         else:
+            msg = 'Fill out the form!'
       
+      else:
+         msg = 'Invalid forms input'
+         
    return render_template('add_psw.html', msg=msg, rand_psw=rand_psw)
 
 
@@ -190,16 +198,19 @@ def add_psw():
 def del_psw():
    msg = ''
    if request.method == 'POST' and 'wbst' in request.form:
-      website = request.form['wbst']
+      if val.is_input_safe(request.form['wbst']):
+         website = request.form['wbst']
 
-      if db.password_exists(website):
-         token = request.cookies.get('Session ID')
-         username = db.get_user_from_token(token)
-         db.remove_old_password(username, website)
-         msg = 'Password removed'
+         if db.password_exists(website):
+            token = request.cookies.get('Session ID')
+            username = db.get_user_from_token(token)
+            db.remove_old_password(username, website)
+            msg = 'Password removed'
 
+         else:
+            msg = 'There is no password saved for ' + website
       else:
-         msg = 'There is no password saved for ' + website
+         msg = 'Invalid forms input'
 
    return render_template('del_psw.html', msg=msg)
 
@@ -246,22 +257,24 @@ def send_recovery_email():
    try:
       if request.method == 'POST' and 'uname' in request.form:
          details = request.form
-         login = details['uname']
+         if val.is_username_format(details['uname']):
+            login = details['uname']
 
-         if db.user_exists(login):
-            token = val.get_random_string(100)
-            db.add_recovery_token(login,token)
-            user_email = db.get_email_from_username(login)
-            print("bbb" + user_email +"bbb")
-            mail.send_mail(user_email,token)
-            msg = 'Sent recovery email!'
+            if db.user_exists(login):
+               token = val.get_random_string(100)
+               db.add_recovery_token(login,token)
+               user_email = db.get_email_from_username(login)
+               mail.send_mail(user_email,token)
+               msg = 'Sent recovery email!'
 
-         elif login:
-            msg = 'Username does not exists!'
+            elif login:
+               msg = 'Username does not exists!'
 
+            else:
+               msg = 'Fill out the form!'
          else:
-            msg = 'Fill out the form!'
-
+            msg = 'Invalid forms input'
+         
       elif request.method == 'POST':
          msg = 'Fill out the form!'
 
