@@ -6,7 +6,6 @@ import random
 import string
 from app import db, app, validation as val, mail
 
-### dekorator do określania podstron, na których trzeba być zalagowanym
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -14,6 +13,12 @@ def login_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
+
+def get_user_from_token_val(token):
+   if val.is_input_safe(token):
+      return db.get_user_from_token(token)
+   else:
+      return None
 
 
 @app.route("/")
@@ -63,7 +68,6 @@ def login():
                res = make_response("Logged in", 302)
                res.set_cookie("Session ID", token, max_age=300, secure=True, httponly=True)
                res.headers['location'] = 'home'
-               print(db.get_user_login_attempts(login))
                return res
 
          elif not login or not password:
@@ -109,7 +113,8 @@ def logout():
 @login_required
 def home():
    token = request.cookies.get('Session ID')
-   return render_template('home.html',  username = db.get_user_from_token(token))
+   uname = get_user_from_token_val(token)
+   return render_template('home.html',  username = uname)
 
 
 @app.route('/home/psw_list', methods=['GET', 'POST'])
@@ -119,9 +124,9 @@ def psw_list():
 
    if request.method == 'POST' and 'mpsw' in request.form:
       master_password = request.form['mpsw']
-      if val.is_password_format(details['mpsw'])
+      if val.is_password_format(master_password):
          token = request.cookies.get('Session ID')
-         username = db.get_user_from_token(token)
+         username = get_user_from_token_val(token)
 
          if not db.validate_user(username, master_password):
             msg = "Wrong master password!"
@@ -142,7 +147,7 @@ def psw_list():
 def attempts_list():
 
    token = request.cookies.get('Session ID')
-   username = db.get_user_from_token(token)
+   username = get_user_from_token_val(token)
    rows = db.get_user_login_attempts(username)
    msg = "Showing list of saved " + str(len(rows)) + " login attempt(s)"
    return render_template('attempts.html',rows=rows, msg=msg)
@@ -164,7 +169,7 @@ def add_psw():
          if login and password and master_password:
 
             token = request.cookies.get('Session ID')
-            username = db.get_user_from_token(token)
+            username = get_user_from_token_val(token)
 
             if not db.validate_user(username, master_password):
                return render_template('add_psw.html', msg="Wrong master password!", rand_psw=rand_psw)
@@ -203,7 +208,7 @@ def del_psw():
 
          if db.password_exists(website):
             token = request.cookies.get('Session ID')
-            username = db.get_user_from_token(token)
+            username = get_user_from_token_val(token)
             db.remove_old_password(username, website)
             msg = 'Password removed'
 
@@ -310,3 +315,57 @@ def recovery():
       return("Something went wrong: {}".format(err))
    
    return render_template('recovery.html', msg=msg)
+
+@app.route('/home/share', methods=['GET', 'POST'])
+def share():
+
+   msg = ''
+   try:
+      if request.method == 'POST' and 'uname' in request.form and 'wbst' in request.form:
+         details = request.form
+         if val.is_username_format(details['uname']) and val.is_input_safe(details['wbst']):
+            shared_user = details['uname']
+            token = details['wbst']
+
+            if db.user_exists(login) and db.recovery_token_valid(token,login):
+               db.reset_password(login, password)
+               db.del_recovery_token(token)
+            else:
+               msg = 'Invalid token or user doesnt exists'
+         else:
+            msg = 'Invalid forms input'
+
+      elif request.method == 'POST':
+         msg = 'Fill out the form!'
+
+   except mariadb.Error as err:
+      return("Something went wrong: {}".format(err))
+   
+   return render_template('share.html', msg=msg)
+
+@app.route('/home/update_mpsw', methods=['GET', 'POST'])
+def update_mpsw():
+
+   msg = ''
+   try:
+      if request.method == 'POST' and 'old_psw' in request.form and 'new_psw' in request.form:
+         details = request.form
+         if val.is_password_format(details['old_psw']) and val.is_password_format(details['new_psw']):
+            old_password = details['old_psw']
+            new_password = details['new_psw']
+            token = request.cookies.get('Session ID')
+            username = get_user_from_token_val(token)
+            if db.validate_user(username,old_password):
+               db.reencrypt_passwords(username,old_password,new_password)
+            else:
+               msg = 'Invalid session cookie'
+         else:
+            msg = 'Invalid forms input'
+
+      elif request.method == 'POST':
+         msg = 'Fill out the form!'
+
+   except mariadb.Error as err:
+      return("Something went wrong: {}".format(err))
+   
+   return render_template('update_mpsw.html', msg=msg)

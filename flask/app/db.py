@@ -23,10 +23,22 @@ def reset_password(login, password):
     hashed, salt = enc.encrypt(password)
     u_id = get_id_from_username(login)
     cursor = connection.cursor(buffered=True)
-    print("reset_password")
     cursor.execute("UPDATE users SET passwd=%s, salt=%s WHERE ID = %s", (hashed, salt, u_id))
-    print("reset_password2")
     remove_user_passwords(u_id)
+    connection.commit()
+    cursor.close()
+
+
+def reencrypt_passwords(username, old_password, new_password):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute('select p.website, cast(AES_DECRYPT(p.passwd, SHA2(%s,512)) as CHAR) from users u join passwords p on u.ID = p.u_id where u.username = %s', (old_password, username))
+    rows = cursor.fetchall()
+    u_id = get_id_from_username(username)
+    remove_user_passwords(u_id)
+    for row in rows:
+        cursor.execute("INSERT INTO passwords(u_id, website, passwd) VALUES (%s, %s, AES_ENCRYPT(%s, SHA2(%s,512)))", (u_id, row[0], row[1], new_password))
+    hashed, salt = enc.encrypt(new_password)
+    cursor.execute("UPDATE users SET passwd=%s, salt=%s WHERE ID = %s", (hashed, salt, u_id))
     connection.commit()
     cursor.close()
 
@@ -82,13 +94,6 @@ def get_user_salt(username):
 
 
 def get_passwords(username, master_password):
-    cursor = connection.cursor(buffered=True)
-    cursor.execute('select p.website, cast(AES_DECRYPT(p.passwd, SHA2(%s,512)) as CHAR) from users u join passwords p on u.ID = p.u_id where u.username = %s', (master_password, username))
-    rows = cursor.fetchall()
-    cursor.close()
-    return rows
-
-def recrypt_passwords(username, master_password):
     cursor = connection.cursor(buffered=True)
     cursor.execute('select p.website, cast(AES_DECRYPT(p.passwd, SHA2(%s,512)) as CHAR) from users u join passwords p on u.ID = p.u_id where u.username = %s', (master_password, username))
     rows = cursor.fetchall()
@@ -187,7 +192,6 @@ def del_terminated_recovery_tokens():
 
 def del_recovery_token(token):
     cursor = connection.cursor(buffered=True)
-    print("recovery_token")
     cursor.execute("DELETE FROM recovery_tokens WHERE token=%s", (token, ))
     connection.commit()
     cursor.close()

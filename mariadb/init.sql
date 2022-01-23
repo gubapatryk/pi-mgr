@@ -34,12 +34,11 @@ CREATE TABLE IF NOT EXISTS tokens (
 
 CREATE TABLE IF NOT EXISTS shared_passwords (
   ID int(10) NOT NULL AUTO_INCREMENT,
-  p_id int(10) NOT NULL,
-  o_id int(10) NOT NULL,
-  r_id int(10) NOT NULL,
+  password_id int(10) NOT NULL,
+  owner_id int(10) NOT NULL,
+  receiver_id int(10) NOT NULL,
   active BOOLEAN NOT NULL DEFAULT true,
   PRIMARY KEY  (ID),
-  FOREIGN KEY (p_id) REFERENCES passwords(ID)
 );
 
 CREATE TABLE IF NOT EXISTS login_attempts (
