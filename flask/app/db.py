@@ -136,19 +136,19 @@ def remove_old_password(username, website):
 def add_shared_password(username, receiver_name, website, master_password):
     cursor = connection.cursor(buffered=True)
     user_id = get_id_from_username(username)
-    cursor.execute('SELECT website, cast(AES_DECRYPT(passwd, SHA2(%s,512)) as CHAR) FROM passwords WHERE website = %s', (master_password, website,))
+    cursor.execute('SELECT cast(AES_DECRYPT(passwd, SHA2(%s,512)) as CHAR) FROM passwords WHERE website = %s  AND u_id = %s', (master_password, website, user_id))
     data = cursor.fetchone()
-    website = data[0]
-    password_decrypted = data[1]
+    password_decrypted = data[0]
     admin_id = get_id_from_username('admin')
     receiver_id = get_id_from_username(receiver_name)
-    pass_id = get_id_from_website(website)
     cursor.execute("INSERT INTO passwords(u_id, website, passwd) VALUES (%s, %s, AES_ENCRYPT(%s, SHA2(%s,512)))", (admin_id, website, password_decrypted, local_admin_password))
-    cursor.execute("INSERT INTO shared_passwords(password_id, owner_id, receiver_id, active) VALUES (%s, %s, %s, false)", (pass_id, user_id, receiver_id))
+    cursor.execute('SELECT ID FROM passwords WHERE website = %s  AND u_id = %s', (website, admin_id))
+    data = cursor.fetchone()
+    cursor.execute("INSERT INTO shared_passwords(password_id, owner_id, receiver_id, active) VALUES (%s, %s, %s, false)", (data[0], user_id, receiver_id))
     connection.commit()
     cursor.close()
 
-def refresh_shared_passwords(username):
+def refresh_shared_passwords(username,master_password):
     cursor = connection.cursor(buffered=True)
     user_id = get_id_from_username(username)
     cursor.execute("SELECT password_id FROM shared_passwords WHERE (receiver_id = %s AND active is false)", (user_id, ))
@@ -156,10 +156,10 @@ def refresh_shared_passwords(username):
     print(rows)
     for row in rows:
         print(row)
-        cursor.execute("SELECT website, cast(AES_DECRYPT(passwd, SHA2(%s,512)) as CHAR), passwd FROM passwords WHERE ID=%s", (local_admin_password, row[0]))
+        cursor.execute("SELECT website, cast(AES_DECRYPT(passwd, SHA2(%s,512)) as CHAR) FROM passwords WHERE ID=%s", (local_admin_password, row[0]))
         data = cursor.fetchone()
         print(data)
-        cursor.execute("INSERT INTO passwords (u_id, website, passwd) VALUES (%s, %s, AES_ENCRYPT(%s, SHA2(%s,512)))", (user_id, data[0], data[1], local_admin_password))
+        cursor.execute("INSERT INTO passwords (u_id, website, passwd) VALUES (%s, %s, AES_ENCRYPT(%s, SHA2(%s,512)))", (user_id, data[0], data[1], master_password))
         cursor.execute("DELETE FROM passwords WHERE ID=%s", (row[0], ))
         cursor.execute("UPDATE shared_passwords SET active=true WHERE password_id = %s", (row[0], ))
         print('fin')

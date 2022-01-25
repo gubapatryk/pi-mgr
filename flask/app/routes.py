@@ -113,7 +113,6 @@ def logout():
 def home():
    token = request.cookies.get('Session ID')
    uname = get_user_from_token_val(token)
-   db.refresh_shared_passwords(uname)
    return render_template('home.html',  username = uname)
 
 
@@ -132,7 +131,7 @@ def psw_list():
             msg = "Wrong master password!"
             return render_template('psw_list.html', msg=msg)
          
-         db.refresh_shared_passwords(username)
+         db.refresh_shared_passwords(username,master_password)
          rows = db.get_passwords(username, master_password)
          msg = "Your have " + str(len(rows)) + " saved passwords"
          return render_template('psw_list.html',rows=rows, msg=msg)
