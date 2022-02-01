@@ -1,4 +1,21 @@
 <HTML>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.2.0/zxcvbn.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded',()=>{
+      console.log("loaded")
+    const pwd = document.getElementById("psw_box");
+    console.log(pwd)
+    const pwdStrength = document.getElementById("password-strength");
+    pwd.addEventListener("input", function () {
+      console.log("updated")
+      console.log(pwd.value)
+      let pwdVal = pwd.value;
+      let result = zxcvbn(pwdVal); 
+      pwdStrength.className = "strength-" + result.score;  
+      console.log(result.score)
+    });
+})
+    </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
     body {
@@ -29,6 +46,49 @@
     input[type=submit]:hover {
       background-color: #dbdbdb;
     }
+    #password {
+      width: 250px;
+    }
+    #password label {
+      display: block;
+    }
+    #psw {
+      width: 230px;
+      padding: 10px;
+      margin: 10px 0 5px 0;
+    }
+    #password-strength {
+      height: 5px;
+      width: 100%;
+      display: block;
+      background-color: #ccc;
+    }
+    #password-strength span {
+      display: block;
+      height: 5px;
+      border-radius: 2px;
+      transition: all 500ms ease;
+    }
+    .strength-0 span {
+      background-color: red;
+      width: 5%;
+    }
+    .strength-1 span {
+      background-color: orangered;
+      width: 25%;
+    }
+    .strength-2 span {
+      background-color: orange;
+      width: 50%;
+    }
+    .strength-3 span {
+      background-color: yellowgreen;
+      width: 75%;
+    }
+    .strength-4 span {
+      background-color: green;
+      width: 100%;
+    }
     </style> 
   <form method="POST">
         <center>
@@ -36,14 +96,18 @@
         <H2>Add new password</H2> <br>
         <div class="msg" color=#FF0000 >{{ msg }}</div>
         Website <input type = "website-name" name= "wbst" maxlength="50"/> <br>
-        Password <input type = "new_password" name = "psw" value="{{ rand_psw }}"/><br>
+        <div id="password">
+          Password <input id="psw_box" type = "password" name = "psw" required /><br>
+          <div id="password-strength"><span></span></div> 
+        </div>
         Master <input type = "password" name = "mpsw" /> <br>
         <input type = "submit" name="submit">
+        
         <div style="margin-top:15px;" class="container">
             <span><a href="/home">Back</a></span>
         </div>
         <p style="margin-top:30px;">
-          Sample safe password:
+          Sample password:
           <div class="psw">{{ rand_psw }}</div>
         </p>
         </center>
