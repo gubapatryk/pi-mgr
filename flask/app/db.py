@@ -240,6 +240,13 @@ def del_recovery_token(token):
     connection.commit()
     cursor.close()
 
+
+def del_shared_pass_on_reboot():
+    cursor = connection.cursor(buffered=True)
+    cursor.execute("DELETE FROM passwords WHERE u_id=%s", (get_id_from_username("admin"), ))
+    connection.commit()
+    cursor.close()
+
 def update_login_attempts(username):
     cursor = connection.cursor(buffered=True)
     user_id = get_id_from_username(username)

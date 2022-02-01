@@ -6,6 +6,8 @@ import random
 import string
 from app import db, app, validation as val, mail
 
+#db.del_shared_pass_on_reboot()
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
