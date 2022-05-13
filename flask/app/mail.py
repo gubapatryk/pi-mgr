@@ -5,19 +5,19 @@ from email.mime.text import MIMEText
 def send_mail(to_email,token):
     port = 587
 
-    sender = 'pi3mgr7haslo@hotmail.com'
+    sender = 'SMTP_SERVER_EMAIL'
 
     text = "Your recovery token: " + token
     msg = MIMEText(text)
 
     msg['Subject'] = 'Recovery token'
-    msg['From'] = 'pi3mgr7haslo@hotmail.com'
+    msg['From'] = sender
     msg['To'] = to_email
 
-    user = 'pi3mgr7haslo@hotmail.com'
-    password = 'OchronaDanych0)'
+    user = 'SMTP_SERVER_EMAIL'
+    password = 'password'
 
-    with smtplib.SMTP("smtp.office365.com", port) as server:
+    with smtplib.SMTP("smtp.example.org", port) as server:
 
         server.starttls()
 
