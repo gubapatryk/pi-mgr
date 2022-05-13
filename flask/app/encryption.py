@@ -1,5 +1,6 @@
 import bcrypt
 
+#example pepper
 pepper = b'2hf27hf283bf8'
 
 def encrypt(password):
