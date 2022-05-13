@@ -9,7 +9,7 @@ config = {
       'database': 'pm_db',
       }
 
-local_admin_password = "kj23#FRjmfDFsjl"
+local_admin_password = "sekretnysekret"
 
 connection = mariadb.connect(**config)
 
